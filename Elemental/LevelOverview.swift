@@ -15,9 +15,9 @@ struct LevelOverview: View {
     var body: some View {
         NavigationView {
             VStack {
+                FlipView(source: "wood", target: "fire")
                 Spacer()
                     .frame(height: UIScreen.main.bounds.height * 0.05)
-                ImageTransitionExample()
                 Text("elemental")
                     .font(Font.custom("Courier-Bold", size: 32))
                     .fontWeight(.bold)

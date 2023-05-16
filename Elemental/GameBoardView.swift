@@ -29,7 +29,6 @@ struct GameBoardView: View {
                         ParticleView(particles: $viewModel.particles, size: geometry.size)
                     }
                     .frame(width: boardWidth, height: boardHeight)
-                    WarpedImageView(viewModel: viewModel, cellSize: cellSize, cellSpacing: cellSpacing)
                     BottomButtonsView(viewModel: viewModel)
                 }
                 
@@ -120,19 +119,6 @@ struct GridView: View {
     }
 }
 
-struct WarpedImageView: View {
-    @ObservedObject var viewModel: GameModel
-    let cellSize: CGFloat
-    let cellSpacing: CGFloat
-
-    var body: some View {
-        Image(uiImage: viewModel.getWarpedImage() ?? UIImage())
-            .opacity(viewModel.warpTransitionProgress > 0 ? 1 : 0)
-            .position(x: CGFloat(viewModel.warpTransitionPosition?.col ?? 0) * cellSize + CGFloat(viewModel.warpTransitionPosition?.col ?? 0) * cellSpacing + cellSize / 2,
-                      y: CGFloat(viewModel.warpTransitionPosition?.row ?? 0) * cellSize + CGFloat(viewModel.warpTransitionPosition?.row ?? 0) * cellSpacing + cellSize / 2)
-    }
-}
-
 struct BottomButtonsView: View {
     @ObservedObject var viewModel: GameModel
 
@@ -212,6 +198,50 @@ struct GridCellView: View {
         }
     }
 }
+
+struct FlipView: View {
+    let source: String
+    let target: String
+    @State private var isShowingTarget = false
+    @State private var sourceOpacity = 1.0
+    
+    var body: some View {
+        VStack {
+            Spacer()
+            Button(action: {
+                withAnimation(.easeIn(duration: 0.5)) {
+                    isShowingTarget.toggle()
+                }
+            }) {
+                ZStack {
+                    Image(source)
+                        .resizable()
+                        .scaledToFit()
+                        .rotation3DEffect(.degrees(isShowingTarget ? 90 : 0), axis: (x: 0, y: 1, z: 0))
+                        .opacity(sourceOpacity)
+                        .onChange(of: isShowingTarget) { newValue in
+                            if newValue {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                    sourceOpacity = 0.0
+                                }
+                            } else {
+                                sourceOpacity = 1.0
+                            }
+                        }
+                    
+                    Image(target)
+                        .resizable()
+                        .scaledToFit()
+                        .rotation3DEffect(.degrees(isShowingTarget ? 0 : -90), axis: (x: 0, y: 1, z: 0))
+                        .opacity(isShowingTarget ? 1.0 : 0.0)
+                        .animation(isShowingTarget ? .easeOut(duration: 0.5).delay(0.5) : nil, value: isShowingTarget)
+                }
+            }
+            Spacer()
+        }
+    }
+}
+
 
 struct GameOverView: View {
     let score: Int

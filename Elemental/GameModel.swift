@@ -10,8 +10,6 @@ class GameModel: ObservableObject {
     @Published var isGameOver: Bool = false
     @Published var levelName: String = "Default"
     
-    @Published var warpTransitionProgress: CGFloat = 0.0
-    private(set) var warpTransitionPosition: Position? = nil
     private var displayLink: CADisplayLink?
     
     @Published private(set) var highScore: Int = 0
@@ -90,46 +88,6 @@ class GameModel: ObservableObject {
         return board[row][col] == ElementType.empty || board[row][col] == nil
     }
     
-    func runWarpTransitionAnimation(from sourceImage: UIImage, to targetImage: UIImage, at position: Position) {
-        warpTransitionProgress = 0.0
-        warpTransitionPosition = position
-        let displayLink = CADisplayLink(target: self, selector: #selector(updateWarpTransition))
-        displayLink.preferredFramesPerSecond = 60
-        self.displayLink = displayLink
-        displayLink.add(to: .main, forMode: .common)
-    }
-    
-    @objc func updateWarpTransition(displayLink: CADisplayLink) {
-        let deltaTime = CGFloat(displayLink.duration)
-        warpTransitionProgress += deltaTime
-        if warpTransitionProgress >= 1.0 {
-            warpTransitionProgress = 1.0
-            displayLink.invalidate()
-            displayLink.remove(from: .main, forMode: .common)
-            self.displayLink = nil
-        }
-    }
-    
-    func getWarpedImage() -> UIImage? {
-        guard let sourceImage = ElementType.wood.image().ciImage, let targetImage = ElementType.fire.image().ciImage else {
-            return nil
-        }
-
-        let transitionFilter = CIFilter(name: "CIDissolveTransition")!
-        transitionFilter.setValue(sourceImage, forKey: kCIInputImageKey)
-        transitionFilter.setValue(targetImage, forKey: kCIInputTargetImageKey)
-        transitionFilter.setValue(warpTransitionProgress, forKey: kCIInputTimeKey)
-
-        guard let outputImage = transitionFilter.outputImage else {
-            return nil
-        }
-
-        let context = CIContext(options: nil)
-        if let cgImage = context.createCGImage(outputImage, from: outputImage.extent) {
-            return UIImage(cgImage: cgImage)
-        }
-        return nil
-    }
     
     func generateParticles(sourceRow: Int, sourceCol: Int, targetRow: Int, targetCol: Int, interaction: ElementType) {
         
@@ -347,7 +305,6 @@ class GameModel: ObservableObject {
                 case .stone:
                     if self.board[r][c] == .wood {
                         self.generateParticles(sourceRow: row, sourceCol: col, targetRow: r, targetCol: c, interaction: .stone)
-                        self.runWarpTransitionAnimation(from: ElementType.wood.image(), to: ElementType.fire.image(), at: Position(row: r, col: c))
                         self.board[r][c] = .fire
                         firePositions.append((r, c))
                         pointsEarned += 1
