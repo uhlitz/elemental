@@ -1,0 +1,11 @@
+# use .gitignore as whitelist
+*
+!*/
+
+# track this file
+!.gitignore
+
+# whitelist all .swift and .md files
+!*.swift
+!*.md
+
